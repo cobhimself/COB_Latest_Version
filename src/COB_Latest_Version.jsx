@@ -24,8 +24,11 @@
  * @version 0.1.0
  */
 
-/*jslint white: true, onevar: true, undef: true, newcap: true, nomen: true, 
-regexp: false, plusplus: true, bitwise: true, maxerr: 200, maxlen: 79, indent: 4 */                 
+/**
+ * jslint white: true, onevar: true, undef: true, newcap: true, nomen: true, 
+ * regexp: false, plusplus: true, bitwise: true, maxerr: 200, maxlen: 79,
+ * indent: 4
+ */                 
 
 /*global app, $, File, Folder, alert, prompt, clearOutput, writeLn, write,
 confirm, Window, Panel, localize, unescape, TimecodeDisplayType,
@@ -50,33 +53,32 @@ COB.LV = (function LV(globalObj) {
      * A reference to COB.LV
      * @type {COB.LV}
      */
-    var that,
+    var that = this,
         
         /**
          * Object containing information about the main file.
          * @type {Object}
          */
         mainFile = {},
+
         /**
          * Object containint information about the auto-save directory.
          * @type {Object}
          */
         autoSaveDir = {},
+
         /**
          * Whether or not to display debug messages.
          * @type {Boolean}
          */
         debug = true,
-        /**
-         * A reference to the main pallete of the COB.LV UI
-         * @type {Window|Palette}
-         */
-        mainPal = null,
+
         /**
          * A referece to the pop-up choice menu of the COB.LV UI
          * @type {Window}
          */
         choiceMenu = null,
+
         /**
          * The user's operating system (Win or Mac).
          * @type {String}
@@ -173,7 +175,7 @@ COB.LV = (function LV(globalObj) {
                 "<http://creativecommons.org/licenses/by-sa/3.0/us/>\n\n" +
                 "Contact:\n\n" +
                 "Collin Brooks <collin.brooks@gmail.com>"},
-            selectProject: {en: 'Select Project'},
+            selectProject: {en: "Select Project"},
             useCurrent: {en: 'Use Current'},
             newerAutoSave: {en: 'There is a newer auto-saved version!'},
             mainFileInfo: {en: 'Main File Info'},
@@ -329,9 +331,10 @@ COB.LV = (function LV(globalObj) {
      * @returns Nothing.
      */
     function overwriteMainFile() {
-            if (confirm(localize(lang.overwriteConfirmation))) {
-                proceedWithChoice("Overwrite");
-            }
+        var l = localize;
+        if (confirm(l(lang.overwriteConfirmation))) {
+            proceedWithChoice("Overwrite");
+        }
     }
 
     /**
@@ -354,7 +357,7 @@ COB.LV = (function LV(globalObj) {
         outputLn("====================");
         outputLn("User's OS is: " + os);
 
-        if (UI.useCurrentProject()  === 0) {
+        if (UI.mainPal.useCurrentProject()  === 0) {
             //OPEN UP A FILE SELECTION DIALOG WITH ONLY .AE FILES AVAILABLE
             if (os === "Win") {
                 mainFile.file = File.openDialog(
@@ -436,7 +439,7 @@ COB.LV = (function LV(globalObj) {
                         lang.choiceHeadingText,
                         File.decode(autoSaveDir.latestFile.name)
                     );
-                    choiceMenu(headingText);
+                    choiceMenu.init(headingText);
                     choiceMenu.center();
                     choiceMenu.show();
                 } else {
@@ -472,28 +475,28 @@ COB.LV = (function LV(globalObj) {
     UI = {};
 
     /**
-     * The main palette (or window) of the COB.LV script.
-     * @type {Object}
+     * A reference to the main pallete of the COB.LV UI
+     * @type {Window|Palette}
      */
-    UI.mainPal = (function mainPal() {
+    UI.mainPal = (function mainPal(globalObj) {
         var thePal = (globalObj instanceof Panel) ?
                 globalObj :
                 new Window(
                     "palette",
-                    that.scripitName + " " + that.version,
+                    that.scriptName + " " + that.version,
                     undefined,
                     {resizeable: false}
                 ),
             res, winGfx, darkColorBrush,
             l = localize,
             /**
-             * Shortcut ~eference to thePal.grp.
+             * Shortcut reference to thePal.grp.
              * @type {Group}
              */
             g,
-            lang = that.lang,
             e = new EventManager();
-        
+        alert(lang);
+        alert(l(lang.selectProject));
         if (thePal !== null) {
             //MAIN UI RESOURCE SETUP
             res = "group { " +
@@ -501,7 +504,7 @@ COB.LV = (function LV(globalObj) {
                 "margins:2, " +
                 "alignment:['fill','fill'], " +
                 "selectProjButton: Button {" +
-                    "text:" + l(lang.selectProject) + " ," +
+                    "text:'" + l(lang.selectProject) + "' ," +
                     "alignment:'right'," +
                     "size:[125,20]" +
                 "}," +
@@ -509,7 +512,7 @@ COB.LV = (function LV(globalObj) {
                     "orientation: 'row'," +
                     "alignment: 'center'," +
                     "useCurrent: Checkbox {" +
-                        "text:" + l(lang.useCurrent) +
+                        "text:'" + l(lang.useCurrent) + "'" +
                     "}," +
                     "helpButton: Button {" +
                         "text: '?'," +
@@ -553,14 +556,15 @@ COB.LV = (function LV(globalObj) {
                 },
                 useCurrentProject: function () {
                     return thePal.grp.selectGroup.useCurrent.value; 
-                }
+                },
+                addEventListener: e.addEventListener,
+                removeEventListener: e.removeEventListener
             };
         }
     }(globalObj));
     
-    UI.choiceMenu = function choiceMenu(headText) {
-        var lang = that.lang,
-            l = localize,
+    UI.choiceMenu = (function choiceMenu() {
+        var l = localize,
             choiceWin,
             res,
             /**
@@ -582,7 +586,7 @@ COB.LV = (function LV(globalObj) {
                 "size: [350, 400], " +
                 "alignment:['fill','fill'], " +
                 "headText: StaticText {" +
-                    "text: '" + headText + "'," +
+                    "text: ''," +
                     "alignment:'center'" +
                 "}, " +
                 "comparisonGroup: Group {" +
@@ -594,14 +598,11 @@ COB.LV = (function LV(globalObj) {
                         "text:" + l(lang.mainFileInfo) + "," +
                         "heading: StaticText {" +
                             "alignment:'left'," +
-                            "text: '" + File.decode(mainFile.file.name) + "'" +
+                            "text: ''" +
                         "}, " +
                         "dateInfo: StaticText {" +
                             "alignment:'left'," +
-                            "text: '" + mainFile.file.modified.toDateString() +
-                                    " " +
-                                    mainFile.file.modified.toTimeString() +
-                                    "'" +
+                            "text: ''" +
                         "}," +
                         "selectMainButton: Button {" +
                             "text:" + l(lang.openMainFile) + "," +
@@ -614,16 +615,11 @@ COB.LV = (function LV(globalObj) {
                         "text:'Latest Auto-saved File Info'," +
                         "heading: StaticText {" +
                             "alignment:'left'," +
-                            "text: '" +
-                                    File.decode(autoSaveDir.latestFile.name) +
-                                    "'" +
+                            "text: ''" +
                         "}, " +
                         "dateInfo: StaticText {" +
                             "alignment:'left'," +
-                            "text: '" + autoSaveDir.latestFile.modified.
-                                        toDateString() + " " +
-                                    autoSaveDir.latestFile.modified.
-                                            toTimeString() + "'" +
+                            "text: ''" +
                         "}, " +
                         "selectAutoSavedButton: Button {" +
                             "text:" + l(lang.openAutoSavedFile) + "," +
@@ -653,10 +649,6 @@ COB.LV = (function LV(globalObj) {
 
             outputLn("Adding resource to the menu");
             choiceWin.grp = choiceWin.add(res);
-            choiceWin.layout.layout(true);
-            choiceWin.onResizing = choiceWin.onResize = function () {
-                this.layout.resize();
-            };
 
             g = choiceWin.grp;
             
@@ -668,7 +660,7 @@ COB.LV = (function LV(globalObj) {
                     selectAutoSavedButton.onClick =
                 e.fire("onOpenAutoSavedFile");
             g.selectionGroup.overwriteMainButton.onClick =
-                e.fire("onOverwriteMainFIle");
+                e.fire("onOverwriteMainFile");
             g.selectionGroup.cancelButton.onClick =
                 function () {
                     choiceWin.close();
@@ -678,6 +670,28 @@ COB.LV = (function LV(globalObj) {
             
             outputLn("Choice Menu Created");
             return {
+                init: function (headText) {
+                    g.headText.text = headText;
+
+                    //Set the UI info based upon the now-initialized mainFile
+                    //and autoSaveDir properties.
+                    g.comparisonGroup.mainFileGroup.heading.text =
+                        File.decode(mainFile.file.name);
+                    g.comparisonGroup.mainFileGroup.dateInfo.text =
+                        mainFile.file.modified.toDateString() + " " +
+                        mainFile.file.modified.toTimeString();
+                    g.comparisonGroup.autoSavedFileGroup.heading.text =
+                        File.decode(autoSaveDir.latestFile.name);
+                    g.comparisonGroup.autoSavedFileGroup.dateInfo.text =
+                        autoSaveDir.latestFile.modified.toDateString() +
+                        " " + autoSaveDir.latestFile.modified.toTimeString();
+
+                    choiceWin.layout.layout(true);
+                    choiceWin.onResizing = choiceWin.onResize = function () {
+                        this.layout.resize();
+                    };
+
+                },
                 show: function () {
                     choiceWin.center();
                     choiceWin.show();
@@ -689,20 +703,24 @@ COB.LV = (function LV(globalObj) {
                 }
             };
         }
-    }
+    }());
 
+    //Set event listeners for the UI
+    UI.mainPal.addEventListener("onGetLatestVersion", getLatestVersion);
+    UI.mainPal.addEventListener("onMainPalHelp", help);
+
+    UI.choiceMenu.addEventListener("onOpenMainFile", openMainFile);
+    UI.choiceMenu.addEventListener("onOpenAutoSavedFile", openAutoSavedFile);
+    UI.choiceMenu.addEventListener("onOverwriteMainFile", overwriteMainFile);
+    UI.choiceMenu.addEventListener("onChoiceHelpAlert", choiceHelpAlert);
 
 
     return {
         init: function () {
             resetVars();
-            this.UI.mainPal.show();
+            UI.mainPal.show();
         }
     };
 }(this));
-
-/*******************************************************\
-************************ MAIN ***************************
-\*******************************************************/
 
 COB.LV.init();
