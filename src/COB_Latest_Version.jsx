@@ -46,6 +46,20 @@ COB.LV = undefined;
 //GET LATEST VERSION 1.0
 COB.LV = (function LV(globalObj) {
 
+// Public Properties:
+//----------------------------------------------------------------------------
+
+    /**
+     * The name of this script
+     * @type {String}
+     */
+    this.scriptName = "Latest Version";
+    /**
+     * The current version of this script
+     * @type {String}
+     */
+    this.version = "1.0";
+
 // Private Properties:
 //----------------------------------------------------------------------------
     
@@ -71,13 +85,7 @@ COB.LV = (function LV(globalObj) {
          * Whether or not to display debug messages.
          * @type {Boolean}
          */
-        debug = true,
-
-        /**
-         * A referece to the pop-up choice menu of the COB.LV UI
-         * @type {Window}
-         */
-        choiceMenu = null,
+        debug = false,
 
         /**
          * The user's operating system (Win or Mac).
@@ -90,7 +98,7 @@ COB.LV = (function LV(globalObj) {
          * pallette and the choice menu window.
          * @type {Object}
          */
-        UI,
+        UI = {},
 
         /**
          * Class that keeps track of events and fires them when called.
@@ -127,91 +135,338 @@ COB.LV = (function LV(globalObj) {
          * Language strings used by the COB.lV script.
          * @type {Object}
          */
-        lang = {
-            choiceHelp: {en: "Option 1: Open the main file. \n" +
-                "Option 2: Open the auto-saved file. \n" +
-                "Option 3: Overwrite the main file with the auto-saved " +
-                    "file and " +
-                "open the main file.\n\n" +
-                "NOTE: Overwriting the main file with the auto-saved file " +
-                "cannot be undone so you will be asked to confirm this " +
-                "option. Once you have confirmed, the main file will be " +
-                "overwritten with the auto-saved file " +
-                "(and consequently renamed to the main file's name)."}, 
-            help: {en:  that.scriptName + " " + that.version + "\n" +
-                "Description:\n" +
-                "This script takes an AE file and compares its " +
-                "modified time to that of those in the auto-save directory " +
-                "for that AE file. It then presents a prompt for the user " +
-                "to select what action they would like to take (open " +
-                "main file, open latest auto-saved file or overwrite the " +
-                "main file with the auto-saved file).\n\n" +
+        lang,
+        errors;
 
-                "Directions:\n" +
-                "1. Click on 'Select Project'. If you would like to use " +
-                "the current project's file, select 'Use Current'.\n" +
-                "2. Once you select the main file, the script will begin " +
-                "to compare the modification times of the auto-saved " +
-                "files with that of your selected (main) file. If it " +
-                "cannot find a new auto-saved file, the script will " +
-                "let you know and then quit.\n" +
-                "3. If there is a newer auto-saved file, you will be " +
-                "presented with information about the files and " +
-                "three options:\n\n" +
-                "Option 1: Open the main file. \n" +
-                "Option 2: Open the auto-saved file. \n" +
-                "Option 3: Overwrite the main file with the auto-saved " +
-                "file and open the main file.\n\n" +
-                "NOTE: Overwriting the main file with the auto-saved " +
-                "file cannot be undone so you will be asked to confirm " +
-                "this option. Once you have confirmed, the main file " +
-                "will be overwritten with the auto-saved file " +
-                "(and consequently renamed to the main file's name).\n\n" +
+    lang = {
+        choiceHelp: {en: "Option 1: Open the main file. \n" +
+            "Option 2: Open the auto-saved file. \n" +
+            "Option 3: Overwrite the main file with the auto-saved " +
+                "file and " +
+            "open the main file.\n\n" +
+            "NOTE: Overwriting the main file with the auto-saved file " +
+            "cannot be undone so you will be asked to confirm this " +
+            "option. Once you have confirmed, the main file will be " +
+            "overwritten with the auto-saved file " +
+            "(and consequently renamed to the main file's name)."}, 
+        help: {en:  that.scriptName + " " + that.version + "\n" +
+            "Description:\n" +
+            "This script takes an AE file and compares its " +
+            "modified time to that of those in the auto-save directory " +
+            "for that AE file. It then presents a prompt for the user " +
+            "to select what action they would like to take (open " +
+            "main file, open latest auto-saved file or overwrite the " +
+            "main file with the auto-saved file).\n\n" +
 
-                "Copyright info:\n" +
-                that.scriptName + " " + that.version + " by Collin Brooks " +
-                "is licensed under a Creative Commons Attribution-Share " +
-                "Alike 3.0 United States License." +
-                "<http://creativecommons.org/licenses/by-sa/3.0/us/>\n\n" +
-                "Contact:\n\n" +
-                "Collin Brooks <collin.brooks@gmail.com>"},
-            selectProject: {en: "Select Project"},
-            useCurrent: {en: 'Use Current'},
-            newerAutoSave: {en: 'There is a newer auto-saved version!'},
-            mainFileInfo: {en: 'Main File Info'},
-            openMainFile: {en: 'Open Main File'},
-            openAutoSavedFile: {en: 'Open Auto-saved File'},
-            overwriteMainFile: {en: 'Overwrite Main File'},
-            cancel: {en: 'Cancel'},
-            threeOptions: {en: 'You have three options:'},
-            overwriteConfirmation: {en: 'Are you sure you want to ' +
-                'overwrite the main file with the auto-saved file?'},
-            selectMainAEFile: {en: 'Select the main AE file'},
-            choiceHeadingText: {en: 'The auto-saved file $1 is more ' +
-                'up to date than the file you selected.'},
-            mostUpToDate: {en: 'The file you selected is the most ' +
-                'up-to-date version of this project'}
-        },
-        errors = {
-            NULL_AUTO_SAVE_DIR: "The Adobe After Effects Auto-Save " +
-                "directory could not be found.",
-            NO_AUTO_SAVE_FILES: "There aren't any AE projects in " +
-                "the Auto-Save directory associated with the file " +
-                "you selected",
-            NULL_CURRENT_PROJ: "You currently do not have an open " +
-                "project to use for reference. Please deselect " +
-                "'Use Current' and browse for the file you " +
-                "would like to compare or open a project."
-        };
+            "Directions:\n" +
+            "1. Click on 'Select Project'. If you would like to use " +
+            "the current project's file, select 'Use Current'.\n" +
+            "2. Once you select the main file, the script will begin " +
+            "to compare the modification times of the auto-saved " +
+            "files with that of your selected (main) file. If it " +
+            "cannot find a new auto-saved file, the script will " +
+            "let you know and then quit.\n" +
+            "3. If there is a newer auto-saved file, you will be " +
+            "presented with information about the files and " +
+            "three options:\n\n" +
+            "Option 1: Open the main file. \n" +
+            "Option 2: Open the auto-saved file. \n" +
+            "Option 3: Overwrite the main file with the auto-saved " +
+            "file and open the main file.\n\n" +
+            "NOTE: Overwriting the main file with the auto-saved " +
+            "file cannot be undone so you will be asked to confirm " +
+            "this option. Once you have confirmed, the main file " +
+            "will be overwritten with the auto-saved file " +
+            "(and consequently renamed to the main file's name).\n\n" +
+
+            "Copyright info:\n" +
+            that.scriptName + " " + that.version + " by Collin Brooks " +
+            "is licensed under the Apache License, Version 2.0 (the " +
+            "\"License\"); you may not use this file except in compliance " +
+            "with the License. You may obtain a copy of the License at\n\n" +
+            " http://www.apache.org/licenses/LICENSE-2.0\n\n" +
+            "Unless required by applicable law or agreed to in writing, " +
+            "software distributed under the License is distributed on an " +
+            "\"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, " +
+            "either express or implied. See the License for the specific " +
+            "language governing permissions and limitations under " +
+            "the License.\n\n" +                                          
+            "Contact:\n\n" +
+            "Collin Brooks <collin.brooks@gmail.com>"},
+        selectProject: {en: "Get Latest Version"},
+        useCurrent: {en: 'Use Current Project'},
+        newerAutoSave: {en: 'There is a newer auto-saved version!'},
+        mainFileInfo: {en: 'Main File Info'},
+        openMainFile: {en: 'Open Main File'},
+        openAutoSavedFile: {en: 'Open Auto-saved File'},
+        overwriteMainFile: {en: 'Overwrite Main File'},
+        cancel: {en: 'Cancel'},
+        threeOptions: {en: 'You have three options:'},
+        overwriteConfirmation: {en: 'Are you sure you want to ' +
+            'overwrite the main file with the auto-saved file?'},
+        selectMainAEFile: {en: 'Select the main AE file'},
+        choiceHeadingText: {en: 'The auto-saved file %1 is more ' +
+            'up to date than the file you selected.'},
+        mostUpToDate: {en: 'The file you selected is the most ' +
+            'up-to-date version of this project'},
+        latestAutoSaveInfo: {en: 'Latest Auto-saved File Info'}
+    };
+
+    errors = {
+        NULL_AUTO_SAVE_DIR: "The Adobe After Effects Auto-Save " +
+            "directory could not be found.",
+        NO_AUTO_SAVE_FILES: "There aren't any AE projects in " +
+            "the Auto-Save directory associated with the file " +
+            "you selected",
+        NULL_CURRENT_PROJ: "You currently do not have an open " +
+            "project to use for reference. Please deselect " +
+            "'Use Current' and browse for the file you " +
+            "would like to compare or open a project."
+    };
 
 // Private Methods:
 //----------------------------------------------------------------------------
 
+    /**
+     * A reference to the main pallete of the COB.LV UI
+     * @type {Window|Palette}
+     */
+    UI.mainPal = (function mainPal(globalObj) {
+        var thePal = (globalObj instanceof Panel) ?
+                globalObj :
+                new Window(
+                    "palette",
+                    that.scriptName + " " + that.version,
+                    undefined,
+                    {resizeable: false}
+                ),
+            res, winGfx, darkColorBrush,
+            l = localize,
+            /**
+             * Shortcut reference to thePal.grp.
+             * @type {Group}
+             */
+            g,
+            e = new EventManager();
+        
+        if (thePal !== null) {
+            //MAIN UI RESOURCE SETUP
+            res = "group { " +
+                "orientation: 'column', " +
+                "margins:2, " +
+                "alignment:['fill','fill'], " +
+                "selectProjButton: Button {" +
+                    "text:'" + l(lang.selectProject) + "' ," +
+                    "alignment:['fill', 'fill']," +
+                    "size:[125,20]" +
+                "}," +
+                "selectGroup: Group {" +
+                    "orientation: 'row'," +
+                    "alignment: 'center'," +
+                    "useCurrent: Checkbox {" +
+                        "text:'" + l(lang.useCurrent) + "'" +
+                    "}," +
+                    "helpButton: Button {" +
+                        "text: '?'," +
+                        "alignment:'right'," +
+                        "size: [20, 20]" +
+                    "}" +
+                "}" +
+            "}";
+
+            thePal.grp = thePal.add(res);
+            thePal.layout.layout(true);
+            thePal.onResizing = thePal.onResize = function () {
+                this.layout.resize();
+            };
+            
+            // Workaround to ensure the edittext text color is black, even at
+            // darker UI brightness levels
+            winGfx = thePal.graphics;
+            darkColorBrush = winGfx.newPen(
+                winGfx.BrushType.SOLID_COLOR,
+                [0, 0, 0],
+                1
+            );
+            
+            g = thePal.grp;
+            g.selectProjButton.graphics.foregroundColor = darkColorBrush;
+            
+            //SET UP DIALOG FUNCTIONS
+            g.selectProjButton.onClick = e.fire("onGetLatestVersion");
+            g.selectGroup.helpButton.onClick = e.fire("onMainPalHelp");
+        
+            return {
+                show: function () {
+                    if (thePal instanceof Window)
+                    {
+                        thePal.center();
+                        thePal.show();
+                    } else {
+                        thePal.layout.layout(true);
+                    }
+                },
+                useCurrentProject: function () {
+                    return thePal.grp.selectGroup.useCurrent.value; 
+                },
+                addEventListener: e.addEventListener,
+                removeEventListener: e.removeEventListener
+            };
+        }
+    }(globalObj));
+    
     function outputLn(theText) {
         if (debug) {
             $.writeln(theText);
         }
     }
+
+    /**
+     * The pop-up choice menu of the COB.LV UI
+     * @type {Window}
+     */
+
+    UI.choiceMenu = (function choiceMenu() {
+        var l = localize,
+            choiceWin,
+            res,
+            /**
+             * A pointer to choiceMenu.grp.
+             * @type {Group}
+             */
+            g,
+            e = new EventManager();
+
+        outputLn("Opening choice menu");
+        choiceWin = new Window("palette", "", undefined, {resizeable: false});
+        outputLn("Choice Menu Created");
+        if (choiceWin !== null) {
+            //MAIN UI RESOURCE SETUP
+            outputLn("Creating menu resources");
+            res = "group { " +
+                "orientation: 'column', " +
+                "margins:2, " +
+                "size: [350, 400], " +
+                "alignment:['fill','fill'], " +
+                "headText: StaticText {" +
+                    "text: ''," +
+                    "alignment:'center'" +
+                "}, " +
+                "comparisonGroup: Group {" +
+                    "orientation:'row'," +
+                    "alignment: 'center', " +
+                    "mainFileGroup: Panel {" +
+                        "orientation:'column'," +
+                        "alignment:'center'," +
+                        "text:'" + l(lang.mainFileInfo) + "'," +
+                        "heading: StaticText {" +
+                            "alignment:'left'," +
+                            "text: ''" +
+                        "}, " +
+                        "dateInfo: StaticText {" +
+                            "alignment:'left'," +
+                            "text: ''" +
+                        "}," +
+                        "selectMainButton: Button {" +
+                            "text:'" + l(lang.openMainFile) + "'," +
+                            "alignment:['fill','fill']" +
+                        "}, " +
+                    "}, " +
+                    "autoSavedFileGroup: Panel {" +
+                        "orientation:'column'," +
+                        "alignment: 'center'," +
+                        "text:'" + l(lang.latestAutoSaveInfo) + "'," +
+                        "heading: StaticText {" +
+                            "alignment:'left'," +
+                            "text: ''" +
+                        "}, " +
+                        "dateInfo: StaticText {" +
+                            "alignment:'left'," +
+                            "text: ''" +
+                        "}, " +
+                        "selectAutoSavedButton: Button {" +
+                            "text:'" + l(lang.openAutoSavedFile) + "'," +
+                            "alignment:['fill','fill']" +
+                        "} " +
+                    "} " +
+                "}, " +
+                "selectionGroup: Group {" +
+                    "orientation: 'row'," +
+                    "alignment: 'center'," +
+                    "overwriteMainButton: Button {" +
+                        "text:'" + l(lang.overwriteMainFile) + "'," +
+                        "alignment:['fill','fill']" +
+                    "}, " +
+                    "cancelButton : Button {" +
+                        "text:'" + l(lang.cancel) + "'," +
+                        "alignment:'center'," +
+                        "size:[125,20]" +
+                    "}, " +
+                    "helpButton: Button {" +
+                        "text: '?'," +
+                        "alignment:'right'," +
+                        "size: [20, 20]" +
+                    "}" +
+                "}" +
+            "}";
+
+            outputLn("Adding resource to the menu");
+            choiceWin.grp = choiceWin.add(res);
+
+            g = choiceWin.grp;
+            
+            //SET UP FUNCTIONS
+            outputLn("Creating functions for choice menu");
+            g.comparisonGroup.mainFileGroup.selectMainButton.onClick = 
+                e.fire("onOpenMainFile");
+            g.comparisonGroup.autoSavedFileGroup.
+                    selectAutoSavedButton.onClick =
+                e.fire("onOpenAutoSavedFile");
+            g.selectionGroup.overwriteMainButton.onClick =
+                e.fire("onOverwriteMainFile");
+            g.selectionGroup.cancelButton.onClick =
+                function () {
+                    choiceWin.close();
+                };
+            g.selectionGroup.helpButton.onClick =
+                e.fire("onChoiceHelpAlert");
+            
+            outputLn("Choice Menu Created");
+            return {
+                init: function (headText) {
+                    g.headText.text = headText;
+
+                    //Set the UI info based upon the now-initialized mainFile
+                    //and autoSaveDir properties.
+                    g.comparisonGroup.mainFileGroup.heading.text =
+                        File.decode(mainFile.file.name);
+                    g.comparisonGroup.mainFileGroup.dateInfo.text =
+                        mainFile.file.modified.toDateString() + " " +
+                        mainFile.file.modified.toTimeString();
+                    g.comparisonGroup.autoSavedFileGroup.heading.text =
+                        File.decode(autoSaveDir.latestFile.name);
+                    g.comparisonGroup.autoSavedFileGroup.dateInfo.text =
+                        autoSaveDir.latestFile.modified.toDateString() +
+                        " " + autoSaveDir.latestFile.modified.toTimeString();
+
+                    choiceWin.layout.layout(true);
+                    choiceWin.onResizing = choiceWin.onResize = function () {
+                        this.layout.resize();
+                    };
+
+                },
+                show: function () {
+                    choiceWin.center();
+                    choiceWin.show();
+                },
+                addEventListener: e.addEventListener,
+                removeEventListener: e.removeEventListener,
+                close: function () {
+                    choiceWin.close();
+                }
+            };
+        }
+    }());
 
     function error(e) {
         outputLn("Outputting Error");
@@ -357,7 +612,7 @@ COB.LV = (function LV(globalObj) {
         outputLn("====================");
         outputLn("User's OS is: " + os);
 
-        if (UI.mainPal.useCurrentProject()  === 0) {
+        if (UI.mainPal.useCurrentProject()  === false) {
             //OPEN UP A FILE SELECTION DIALOG WITH ONLY .AE FILES AVAILABLE
             if (os === "Win") {
                 mainFile.file = File.openDialog(
@@ -416,7 +671,8 @@ COB.LV = (function LV(globalObj) {
                 newestFileIndex = 0;
                 highestTime = 0;
                 outputLn("Comparing file times...");
-
+                outputLn("autoSaveDir.files.length: " +
+                    autoSaveDir.files.length);
                 for (f = autoSaveDir.files.length - 1; f >= 0; f -= 1) {
                     currentFileTime = autoSaveDir.files[f].modified.getTime();
                     outputLn("Current file time difference: " +
@@ -439,9 +695,8 @@ COB.LV = (function LV(globalObj) {
                         lang.choiceHeadingText,
                         File.decode(autoSaveDir.latestFile.name)
                     );
-                    choiceMenu.init(headingText);
-                    choiceMenu.center();
-                    choiceMenu.show();
+                    UI.choiceMenu.init(headingText);
+                    UI.choiceMenu.show();
                 } else {
                     alert(l(lang.mostUpToDate));
                 }
@@ -451,259 +706,31 @@ COB.LV = (function LV(globalObj) {
     }
 
     function help() {
-        alert(localize(help));
-    }
-
-// Public Properties:
-//----------------------------------------------------------------------------
-
-    /**
-     * The name of this script
-     * @type {String}
-     */
-    this.scriptName = "Latest Version";
-    /**
-     * The current version of this script
-     * @type {String}
-     */
-    this.version = "1.0";
-    /**
-     * A short description of this script.
-     * @type {String}
-     */ 
-
-    UI = {};
-
-    /**
-     * A reference to the main pallete of the COB.LV UI
-     * @type {Window|Palette}
-     */
-    UI.mainPal = (function mainPal(globalObj) {
-        var thePal = (globalObj instanceof Panel) ?
-                globalObj :
-                new Window(
-                    "palette",
-                    that.scriptName + " " + that.version,
-                    undefined,
-                    {resizeable: false}
-                ),
-            res, winGfx, darkColorBrush,
-            l = localize,
-            /**
-             * Shortcut reference to thePal.grp.
-             * @type {Group}
-             */
-            g,
-            e = new EventManager();
-        alert(lang);
-        alert(l(lang.selectProject));
-        if (thePal !== null) {
-            //MAIN UI RESOURCE SETUP
-            res = "group { " +
-                "orientation: 'column', " +
-                "margins:2, " +
-                "alignment:['fill','fill'], " +
-                "selectProjButton: Button {" +
-                    "text:'" + l(lang.selectProject) + "' ," +
-                    "alignment:'right'," +
-                    "size:[125,20]" +
-                "}," +
-                "selectGroup: Group {" +
-                    "orientation: 'row'," +
-                    "alignment: 'center'," +
-                    "useCurrent: Checkbox {" +
-                        "text:'" + l(lang.useCurrent) + "'" +
-                    "}," +
-                    "helpButton: Button {" +
-                        "text: '?'," +
-                        "alignment:'right'," +
-                        "size: [20, 20]" +
-                    "}" +
-                "}" +
-            "}";
-
-            thePal.grp = thePal.add(res);
-            thePal.layout.layout(true);
-            thePal.onResizing = thePal.onResize = function () {
-                this.layout.resize();
-            };
-            
-            // Workaround to ensure the edittext text color is black, even at
-            // darker UI brightness levels
-            winGfx = thePal.graphics;
-            darkColorBrush = winGfx.newPen(
-                winGfx.BrushType.SOLID_COLOR,
-                [0, 0, 0],
-                1
-            );
-            
-            g = thePal.grp;
-            g.selectProjButton.graphics.foregroundColor = darkColorBrush;
-            
-            //SET UP DIALOG FUNCTIONS
-            g.selectProjButton.onClick = e.fire("onGetLatestVersion");
-            g.selectGroup.helpButton.onClick = e.fire("onMainPalHelp");
-        
-            return {
-                show: function () {
-                    if (thePal instanceof Window)
-                    {
-                        thePal.center();
-                        thePal.show();
-                    } else {
-                        thePal.layout.layout(true);
-                    }
-                },
-                useCurrentProject: function () {
-                    return thePal.grp.selectGroup.useCurrent.value; 
-                },
-                addEventListener: e.addEventListener,
-                removeEventListener: e.removeEventListener
-            };
-        }
-    }(globalObj));
-    
-    UI.choiceMenu = (function choiceMenu() {
         var l = localize,
-            choiceWin,
-            res,
-            /**
-             * A pointer to choiceMenu.grp.
-             * @type {Group}
-             */
-            g,
-            e = new EventManager();
+            helpWindow = new Window("dialog",
+					that.scriptName + " Help",
+					undefined,
+					{resizeable: false}
+					);
 
-        outputLn("Opening choice menu");
-        choiceWin = new Window("palette", "", undefined, {resizeable: false});
-        outputLn("Choice Menu Created");
-        if (choiceWin !== null) {
-            //MAIN UI RESOURCE SETUP
-            outputLn("Creating menu resources");
-            res = "group { " +
-                "orientation: 'column', " +
-                "margins:2, " +
-                "size: [350, 400], " +
-                "alignment:['fill','fill'], " +
-                "headText: StaticText {" +
-                    "text: ''," +
-                    "alignment:'center'" +
-                "}, " +
-                "comparisonGroup: Group {" +
-                    "orientation:'row'," +
-                    "alignment: 'center', " +
-                    "mainFileGroup: Panel {" +
-                        "orientation:'column'," +
-                        "alignment:'center'," +
-                        "text:" + l(lang.mainFileInfo) + "," +
-                        "heading: StaticText {" +
-                            "alignment:'left'," +
-                            "text: ''" +
-                        "}, " +
-                        "dateInfo: StaticText {" +
-                            "alignment:'left'," +
-                            "text: ''" +
-                        "}," +
-                        "selectMainButton: Button {" +
-                            "text:" + l(lang.openMainFile) + "," +
-                            "alignment:['fill','fill']" +
-                        "}, " +
-                    "}, " +
-                    "autoSavedFileGroup: Panel {" +
-                        "orientation:'column'," +
-                        "alignment: 'center'," +
-                        "text:'Latest Auto-saved File Info'," +
-                        "heading: StaticText {" +
-                            "alignment:'left'," +
-                            "text: ''" +
-                        "}, " +
-                        "dateInfo: StaticText {" +
-                            "alignment:'left'," +
-                            "text: ''" +
-                        "}, " +
-                        "selectAutoSavedButton: Button {" +
-                            "text:" + l(lang.openAutoSavedFile) + "," +
-                            "alignment:['fill','fill']" +
-                        "} " +
-                    "} " +
-                "}, " +
-                "selectionGroup: Group {" +
-                    "orientation: 'row'," +
-                    "alignment: 'center'," +
-                    "overwriteMainButton: Button {" +
-                        "text:" + l(lang.overwriteMainFile) + "," +
-                        "alignment:['fill','fill']" +
-                    "}, " +
-                    "cancelButton : Button {" +
-                        "text:" + l(lang.cancel) + "," +
-                        "alignment:'center'," +
-                        "size:[125,20]" +
-                    "}, " +
-                    "helpButton: Button {" +
-                        "text: '?'," +
-                        "alignment:'right'," +
-                        "size: [20, 20]" +
-                    "}" +
-                "}" +
-            "}";
+        helpWindow.grp = helpWindow.add(
+            "group { orientation: 'column', margins:0," +
+                "alignment: ['fill','fill'], size: [350, 450]," +
+                    "content: EditText {properties: {multiline:true}," +
+                    "alignment: ['fill', 'fill']," +
+                        "size: [350,430]}," +
+                    "b: Button {text: 'Ok'}" +
+            "}");
 
-            outputLn("Adding resource to the menu");
-            choiceWin.grp = choiceWin.add(res);
+        helpWindow.grp.b.onClick = function () {
+            helpWindow.close();
+        };
 
-            g = choiceWin.grp;
-            
-            //SET UP FUNCTIONS
-            outputLn("Creating functions for choice menu");
-            g.comparisonGroup.mainFileGroup.selectMainButton.onClick = 
-                e.fire("onOpenMainFile");
-            g.comparisonGroup.autoSavedFileGroup.
-                    selectAutoSavedButton.onClick =
-                e.fire("onOpenAutoSavedFile");
-            g.selectionGroup.overwriteMainButton.onClick =
-                e.fire("onOverwriteMainFile");
-            g.selectionGroup.cancelButton.onClick =
-                function () {
-                    choiceWin.close();
-                };
-            g.selectionGroup.helpButton.onClick =
-                e.fire("onChoiceHelpAlert");
-            
-            outputLn("Choice Menu Created");
-            return {
-                init: function (headText) {
-                    g.headText.text = headText;
-
-                    //Set the UI info based upon the now-initialized mainFile
-                    //and autoSaveDir properties.
-                    g.comparisonGroup.mainFileGroup.heading.text =
-                        File.decode(mainFile.file.name);
-                    g.comparisonGroup.mainFileGroup.dateInfo.text =
-                        mainFile.file.modified.toDateString() + " " +
-                        mainFile.file.modified.toTimeString();
-                    g.comparisonGroup.autoSavedFileGroup.heading.text =
-                        File.decode(autoSaveDir.latestFile.name);
-                    g.comparisonGroup.autoSavedFileGroup.dateInfo.text =
-                        autoSaveDir.latestFile.modified.toDateString() +
-                        " " + autoSaveDir.latestFile.modified.toTimeString();
-
-                    choiceWin.layout.layout(true);
-                    choiceWin.onResizing = choiceWin.onResize = function () {
-                        this.layout.resize();
-                    };
-
-                },
-                show: function () {
-                    choiceWin.center();
-                    choiceWin.show();
-                },
-                addEventListener: e.addEventListener,
-                removeEventListener: e.removeEventListener,
-                close: function () {
-                    choiceWin.close();
-                }
-            };
-        }
-    }());
+        helpWindow.layout.layout(true);
+        helpWindow.center();
+        helpWindow.grp.content.text = l(lang.help);
+        helpWindow.show();
+    }
 
     //Set event listeners for the UI
     UI.mainPal.addEventListener("onGetLatestVersion", getLatestVersion);
