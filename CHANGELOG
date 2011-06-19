@@ -4,3 +4,11 @@ COB Latest Version
 1.0.0
 
  - Initial release.
+
+1.0.1
+
+ - Documentation updated.
+ - When a selected project is the most up-to-date version and 'Use current
+   project' is not selected, the user is given the option to open the selected
+   project.
+

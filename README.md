@@ -8,10 +8,41 @@ auto-saved versions.
 
 ==Description:==
 
-This script takes an AE file and compares its modified time to that of those in
-its auto-save directory. It then presents a prompt for the user to select what
-action they would like to take (open main file, open latest auto-saved file or
-overwrite the main file with the auto-saved file).
+If you've used After Effects for a while, you'll know how frustrating it can be
+to have After Effects crash on you. Sure, After Effects has an "Auto-Save"
+feature where files can be automatically saved at specified intervals but, even
+so, you still have to figure out which version of your After Effects file is
+the most up-to-date: your original AE file or an auto-saved version. This can
+be frustrating in that you have to manually compare modiciation times of your
+AE file and its most recent auto-saved version. Why add frustration to an
+already frustrating situation?
+
+Introducing Latest Version, a script that takes an AE file and compares its
+modified time to that of those in its auto-save directory and presents an easy
+to understand prompt for you to select what action you would like to take (open
+main file, open latest auto-saved file or overwrite the main file with the
+auto-saved file).
+
+**Note:** This script is useless if you do not use After Effect's auto-save
+feature.
+
+==Why would I use it?==
+
+While not everyone enjoys using After Effect's "auto-save" feature, the author
+of this script has been saved (no pun intended) multiple times from losing
+precious minutes of work by having After Effects save every 5 minutes. It makes
+him happy knowing that he will only lose 5 minutes of work if After Effects
+decides to crash while he is working on a time-sensitive project. However, the
+inefficiency of having to browse for his AE project file to figure out if it is
+more up-to-date than an auto-saved version frustrates him and makes him want to
+cry. If you too wish there was an easier way to determine if your After Effects
+file is more up-to-date than its latest auto-saved file, then this script is
+for you.
+
+However, if you live on the wild side and enjoy testing fate by not using After
+Effect's auto-save feature, or you enjoy browsing through your file system to
+manually compare file modification times, I salute you but, this script is not
+for you.
 
 ==Directions:==
 

@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  * @author Collin D Brooks <collin.brooks@gmail.com>
- * @version 0.1.0
+ * @version 1.0.1
  */
 
 /**
@@ -43,7 +43,6 @@ var COB = COB || {};
 //Comment out for production
 COB.LV = undefined;
 
-//GET LATEST VERSION 1.0
 COB.LV = (function LV(globalObj) {
 
 // Public Properties:
@@ -58,7 +57,7 @@ COB.LV = (function LV(globalObj) {
      * The current version of this script
      * @type {String}
      */
-    this.version = "1.0";
+    this.version = "1.0.1";
 
 // Private Properties:
 //----------------------------------------------------------------------------
@@ -85,7 +84,7 @@ COB.LV = (function LV(globalObj) {
          * Whether or not to display debug messages.
          * @type {Boolean}
          */
-        debug = false,
+        debug = true,
 
         /**
          * The user's operating system (Win or Mac).
@@ -208,7 +207,8 @@ COB.LV = (function LV(globalObj) {
         choiceHeadingText: {en: 'The auto-saved file %1 is more ' +
             'up to date than the file you selected.'},
         mostUpToDate: {en: 'The file you selected is the most ' +
-            'up-to-date version of this project'},
+            'up-to-date version of this project.'},
+        doOpenMainFile: {en: 'Would you like to open it?' },
         latestAutoSaveInfo: {en: 'Latest Auto-saved File Info'}
     };
 
@@ -491,7 +491,7 @@ COB.LV = (function LV(globalObj) {
      * doesn't.
      */
     function filterAEPFiles(f) {
-        if (f.name.lastIndexOf(".aep") !== -1) {
+        if (f.name.lastIndexOf(".aep") !== -1 || f instanceof Folder) {
             return true;
         } else {
             return false;
@@ -604,6 +604,8 @@ COB.LV = (function LV(globalObj) {
 
     function getLatestVersion() {
         var newestFileIndex, highestTime, currentFileTime, headingText,
+            askToOpen,
+            useCurrentProject = UI.mainPal.useCurrentProject(),
             l = localize, f;
 
 
@@ -612,7 +614,7 @@ COB.LV = (function LV(globalObj) {
         outputLn("====================");
         outputLn("User's OS is: " + os);
 
-        if (UI.mainPal.useCurrentProject()  === false) {
+        if (useCurrentProject  === false) {
             //OPEN UP A FILE SELECTION DIALOG WITH ONLY .AE FILES AVAILABLE
             if (os === "Win") {
                 mainFile.file = File.openDialog(
@@ -698,7 +700,14 @@ COB.LV = (function LV(globalObj) {
                     UI.choiceMenu.init(headingText);
                     UI.choiceMenu.show();
                 } else {
-                    alert(l(lang.mostUpToDate));
+                    if (useCurrentProject) {
+                        alert(l(lang.mostUpToDate));
+                    } else {
+                        if (confirm(l(lang.mostUpToDate) +
+                                l(lang.doOpenMainFile))) {
+                            app.open(mainFile.file);
+                        }
+                    }
                 }
                 
             }
