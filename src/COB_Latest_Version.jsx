@@ -84,7 +84,7 @@ COB.LV = (function LV(globalObj) {
          * Whether or not to display debug messages.
          * @type {Boolean}
          */
-        debug = true,
+        debug = false,
 
         /**
          * The user's operating system (Win or Mac).
