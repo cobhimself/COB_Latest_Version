@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  * @author Collin D Brooks <collin.brooks@gmail.com>
- * @version 1.0.1
+ * @version 1.0.2
  */
 
 /**
@@ -57,7 +57,7 @@ COB.LV = (function LV(globalObj) {
      * The current version of this script
      * @type {String}
      */
-    this.version = "1.0.1";
+    this.version = "1.0.2";
 
 // Private Properties:
 //----------------------------------------------------------------------------
@@ -85,6 +85,9 @@ COB.LV = (function LV(globalObj) {
          * @type {Boolean}
          */
         debug = false,
+
+        //Function defined later. Outputs text to the console.
+        outputLn,
 
         /**
          * The user's operating system (Win or Mac).
@@ -218,10 +221,9 @@ COB.LV = (function LV(globalObj) {
         NO_AUTO_SAVE_FILES: "There aren't any AE projects in " +
             "the Auto-Save directory associated with the file " +
             "you selected",
-        NULL_CURRENT_PROJ: "You currently do not have an open " +
-            "project to use for reference. Please deselect " +
-            "'Use Current' and browse for the file you " +
-            "would like to compare or open a project."
+        NULL_CURRENT_PROJECT: "Please make sure you have a project open and " +
+            "that it is saved before using the 'User Current Project' " +
+            "functionality."
     };
 
 // Private Methods:
@@ -315,9 +317,22 @@ COB.LV = (function LV(globalObj) {
         }
     }(globalObj));
     
-    function outputLn(theText) {
+    /**
+     * If debug is set to true, this function will output text to the
+     * extendscript console. If it is set to false, this function returns
+     * without doing anything.
+     * @param {String} theText The text to output to the extendscript console.
+     * @return Nothing.
+     */
+    outputLn = function (theText) {
         if (debug) {
-            $.writeln(theText);
+            return function (theText) {
+                $.writeln(theText); 
+            };
+        } else {
+            return function () {
+                return;
+            }
         }
     }
 
@@ -614,8 +629,10 @@ COB.LV = (function LV(globalObj) {
         outputLn("====================");
         outputLn("User's OS is: " + os);
 
+        //If the user has not selected to use the current project
         if (useCurrentProject  === false) {
-            //OPEN UP A FILE SELECTION DIALOG WITH ONLY .AE FILES AVAILABLE
+            //Open up a file selection dialog with only .ae files available.
+            //This is done differently for each of the OS's.
             if (os === "Win") {
                 mainFile.file = File.openDialog(
                     l(lang.selectMainAEFile),
@@ -628,23 +645,27 @@ COB.LV = (function LV(globalObj) {
                 );
             }
         } else {
+            //The user has selected to use the current project. Make sure the
+            //project file is not null
             if (app.project.file !== null) {
                 mainFile.file = app.project.file;
             } else {
-                alert(errors.nullCurrentProj);
+                alert(errors.NULL_CURRENT_PROJECT);
             }
         }
 
+        //Make sure the main file that the user has selected is not null.
         if (mainFile.file !== null) {
         
-        //Get the properties of the selected file
+            //Get the properties of the selected file
             mainFile.name = mainFile.file.name;
             outputLn("Selected File's Name: " + mainFile.name);
+
             mainFile.parentFolder = mainFile.file.parent;
             outputLn("Selected File's Parent Folder: " +
                 mainFile.parentFolder.absoluteURI);
             
-            //GET A LIST OF FILES IN THE AUTO SAVE FOLDER
+            //Get a list of files in the auto save folder
             autoSaveDir.folder = new Folder(
                 mainFile.parentFolder.relativeURI +
                 "/Adobe After Effects Auto-Save"

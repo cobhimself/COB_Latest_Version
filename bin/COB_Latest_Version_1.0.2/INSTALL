@@ -1,0 +1,21 @@
+COB Latest Version Install
+==========================
+
+To use the COB Latest Version script, please read the information below.
+
+The After Effects Scripts Folder
+================================
+When After Effects starts, it loads scripts from the Scripts folder. By
+default, the Scripts folder is in the following location:
+
+ * (Windows) Program Files\Adobe\Adobe After Effects {CS# HERE}\Support Files
+ * (Mac OS) Applications/Adobe After Effects {CS# HERE}
+
+Copy COB_Latest_Version.jsxbin
+==============================
+
+Because the COB Latest Version script can be used as a dockable panel, it's
+best to copy it into the ScriptUI Panels folder located within the Scripts
+folder of your After Effects installation. Once it has been placed within the
+ScriptUI Panels folder, restart After Effects and it should show up in the
+bottom part of the Windows menu.
